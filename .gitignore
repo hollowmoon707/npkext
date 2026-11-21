@@ -1,0 +1,70 @@
+# --- Python -------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build and packaging output (pip install / python -m build)
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
+
+# --- Virtual environments -----------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- Testing and tooling caches -----------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+
+# --- Editors and IDEs ---------------------------------------------------------
+# PyCharm / IntelliJ
+.idea/
+*.iml
+# VS Code (keep shared settings out too; nothing here needs them)
+.vscode/
+*.code-workspace
+# Vim / Emacs / Sublime
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+*.sublime-project
+*.sublime-workspace
+
+# --- Operating systems --------------------------------------------------------
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# --- Claude Code local settings -----------------------------------------------
+.claude/settings.local.json
+
+# --- Game data: never commit it -----------------------------------------------
+# npkext ships no game files. These guard against accidentally adding archives,
+# manifests, logs or unpacked output while testing against a real installation.
+*.npk
+resdb
+log*.txt
+unpacked/
+out/
+_archives/

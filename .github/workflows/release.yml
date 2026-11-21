@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wheel:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Check the package version
+        if: github.ref_type == 'tag'
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          test "$RELEASE_TAG" = "v$version"
+      - name: Build the shared wheel
+        run: |
+          python -m pip install "build>=1.2,<2"
+          python -m build --wheel --outdir release-assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npkext-wheel
+          path: release-assets/*.whl
+          if-no-files-found: error
+
+  bundle:
+    needs: wheel
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            platform: ubuntu
+          - runner: windows-2022
+            platform: windows
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - uses: actions/download-artifact@v4
+        with:
+          name: npkext-wheel
+          path: wheel
+      - name: Install the wheel and build tools
+        shell: bash
+        run: |
+          wheels=(wheel/*.whl)
+          python -m pip install "${wheels[0]}[dev]" "pyinstaller==6.22.3"
+      - name: Test the installed wheel
+        run: python -m pytest -q
+      - name: Build and test the standalone archive
+        run: python tools/release/build_bundle.py --out release-assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npkext-${{ matrix.platform }}-x64
+          path: release-assets/
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: [wheel, bundle]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: npkext-*
+          path: release-assets
+          merge-multiple: true
+      - name: Publish the wheel and both bundles
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          shopt -s nullglob
+          wheels=(release-assets/*.whl)
+          windows=(release-assets/*.zip)
+          ubuntu=(release-assets/*.tar.gz)
+          test "${#wheels[@]}" -eq 1
+          test "${#windows[@]}" -eq 1
+          test "${#ubuntu[@]}" -eq 1
+          gh release create "$RELEASE_TAG" --verify-tag --generate-notes "${wheels[@]}" "${windows[@]}" "${ubuntu[@]}"
