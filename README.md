@@ -71,3 +71,8 @@ Without activating the venv, call the command by its path:
   are saved as `script/_unnamed/<id>.enc`; decrypting them is outside this tool's scope.
 * NeoX's own file formats (`.mesh`, binary XML, `.rawanimation`, …) are written
   as they are, not converted.
+
+## Release downloads
+
+GitHub Releases provide one Python wheel for Windows and Ubuntu and two
+standalone x64 downloads. See [release installation and build instructions](docs/releases.md).
